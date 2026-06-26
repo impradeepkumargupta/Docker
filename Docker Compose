@@ -1,0 +1,371 @@
+Docker Compose (Detailed Guide)
+What is Docker Compose?
+
+Docker Compose is a tool used to define and run multiple Docker containers using a single YAML configuration file (docker-compose.yml).
+
+Instead of running multiple docker run commands, you define all services in one file and start them together.
+
+Why Do We Need Docker Compose?
+
+Imagine a web application with:
+
+Frontend (React)
+Backend (Node.js)
+Database (MySQL)
+
+Without Docker Compose, you need to start each container manually.
+
+docker network create app-network
+
+docker run -d --name mysql \
+  --network app-network \
+  -e MYSQL_ROOT_PASSWORD=root mysql:8
+
+docker run -d --name backend \
+  --network app-network \
+  -p 5000:5000 backend-image
+
+docker run -d --name frontend \
+  --network app-network \
+  -p 3000:80 frontend-image
+
+Managing many containers this way becomes difficult.
+
+With Docker Compose, you use one command:
+
+docker compose up -d
+Docker Compose Architecture
+              docker-compose.yml
+                     |
+             docker compose up
+                     |
+           Docker Compose CLI
+                     |
+              Docker Engine
+                     |
+    ----------------------------------
+    |              |                |
+Frontend      Backend          MySQL
+(Container)   (Container)    (Container)
+                     |
+              Docker Network
+                     |
+              Docker Volumes
+Advantages of Docker Compose
+Manage multiple containers together.
+Automatically creates a network.
+Automatically creates volumes.
+Easy startup and shutdown.
+Version control for infrastructure.
+Ideal for development and testing.
+Main Components of docker-compose.yml
+Keyword	Purpose
+version	Compose file version (optional in newer Compose)
+services	Defines containers
+image	Docker image to use
+build	Build image from Dockerfile
+ports	Port mapping
+volumes	Persistent storage
+networks	Container networking
+environment	Environment variables
+depends_on	Service startup dependency
+restart	Restart policy
+Simple Example
+services:
+
+  nginx:
+    image: nginx
+    ports:
+      - "8080:80"
+
+Run:
+
+docker compose up
+
+Stop:
+
+docker compose down
+Multi-Container Example
+
+Suppose we have:
+
+Web Application
+
+Frontend
+     |
+Backend
+     |
+MySQL
+docker-compose.yml
+version: "3.9"
+
+services:
+
+  mysql:
+    image: mysql:8
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: mydb
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  backend:
+    image: my-backend:latest
+    container_name: backend
+    restart: always
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mysql
+
+  frontend:
+    image: nginx
+    container_name: frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql-data:
+Explanation
+services
+
+Defines all containers.
+
+services:
+image
+
+Specifies the image to use.
+
+image: nginx
+
+Equivalent to:
+
+docker run nginx
+container_name
+container_name: frontend
+
+Instead of a random container name, Docker uses frontend.
+
+ports
+ports:
+  - "8080:80"
+
+Meaning:
+
+Host 8080
+     |
+Container 80
+
+Open:
+
+http://localhost:8080
+environment
+environment:
+  MYSQL_ROOT_PASSWORD: root123
+
+Equivalent to:
+
+docker run -e MYSQL_ROOT_PASSWORD=root123 mysql
+volumes
+volumes:
+  - mysql-data:/var/lib/mysql
+mysql-data → Docker volume
+/var/lib/mysql → Container path
+
+Ensures database data persists after container recreation.
+
+depends_on
+depends_on:
+  - mysql
+
+The backend starts after Docker starts the MySQL container.
+
+Note: depends_on controls startup order only. It does not wait until MySQL is ready to accept connections.
+
+restart
+restart: always
+
+Restart policies:
+
+restart: no
+restart: on-failure
+restart: unless-stopped
+restart: always
+Build Instead of Image
+
+Instead of downloading an image:
+
+services:
+  app:
+    build: .
+
+Docker builds the image using the Dockerfile in the current directory.
+
+Build from Another Directory
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+Docker Compose Lifecycle
+Start
+docker compose up
+
+Foreground mode.
+
+Start in Background
+docker compose up -d
+Stop
+docker compose stop
+
+Stops containers without removing them.
+
+Start Again
+docker compose start
+Restart
+docker compose restart
+Remove Everything
+docker compose down
+
+Removes:
+
+Containers
+Default network
+
+Volumes remain unless you specify -v.
+
+Remove Containers and Volumes
+docker compose down -v
+
+Removes:
+
+Containers
+Networks
+Volumes
+View Running Containers
+docker compose ps
+View Logs
+docker compose logs
+
+Follow logs:
+
+docker compose logs -f
+
+Specific service:
+
+docker compose logs backend
+Execute Commands
+docker compose exec backend bash
+
+Or:
+
+docker compose exec backend sh
+Scale Containers
+docker compose up --scale backend=3
+
+Creates:
+
+backend_1
+
+backend_2
+
+backend_3
+Networks
+
+Compose automatically creates a network.
+
+Example:
+
+project_default
+
+All services join this network and can communicate using service names.
+
+Example:
+
+Frontend
+     |
+http://backend:5000
+     |
+Backend
+     |
+mysql
+
+No IP addresses are needed.
+
+Environment Variables from a File
+
+.env
+
+MYSQL_PASSWORD=root123
+
+Compose:
+
+environment:
+  MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD}
+Useful Docker Compose Commands
+Command	Description
+docker compose up	Create and start services
+docker compose up -d	Start in background
+docker compose down	Stop and remove containers
+docker compose down -v	Remove containers and volumes
+docker compose ps	List services
+docker compose logs	View logs
+docker compose logs -f	Follow logs
+docker compose exec <service> bash	Open shell inside a service
+docker compose stop	Stop services
+docker compose start	Start stopped services
+docker compose restart	Restart services
+docker compose build	Build images
+docker compose pull	Pull latest images
+docker compose config	Validate and display the merged configuration
+Complete Project Structure
+project/
+│
+├── docker-compose.yml
+├── Dockerfile
+├── app/
+│   ├── app.py
+│   └── requirements.txt
+└── .env
+
+
+Interview Questions
+1. What is Docker Compose?
+A tool for defining and running multi-container Docker applications using a YAML file.
+
+2. What file does Docker Compose use?
+docker-compose.yml
+
+3. What is the difference between docker run and Docker Compose?
+docker run starts a single container.
+Docker Compose manages multiple related containers from a single configuration file.
+
+4. What does docker compose up -d do?
+Creates (if necessary) and starts all services in detached (background) mode.
+
+5. What is the purpose of depends_on?
+It defines service startup order but does not ensure the dependency is fully initialized.
+
+6. What is the difference between docker compose stop and docker compose down?
+docker compose stop	docker compose down
+Stops containers	Stops and removes containers
+Containers remain	Containers are deleted
+Networks remain	Default network is removed
+
+7. Does Docker Compose create a network automatically?
+Yes. By default, it creates a project-specific bridge network, and all services join it automatically.
+
+8. How do containers communicate in Docker Compose?
+By using service names as hostnames (for example, mysql or backend) on the automatically created network.
+
+Quick Revision
+Docker Compose = Manage multiple containers with one YAML file.
+Configuration file = docker-compose.yml.
+docker compose up -d = Build (if needed) and start all services in the background.
+docker compose down = Stop and remove containers and the default network.
+Service names act as DNS names, allowing containers to communicate without hardcoding IP addresses.
+Volumes preserve data, and networks connect services automatically.
