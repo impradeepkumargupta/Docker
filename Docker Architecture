@@ -1,0 +1,237 @@
+Docker Architecture
+
+Docker uses a client-server architecture where the Docker Client communicates with the Docker Daemon, which manages containers, images, networks, and volumes.
+
+                   User
+                     |
+             docker run nginx
+                     |
+             +----------------+
+             | Docker Client  |
+             +----------------+
+                     |
+          Docker REST API (Unix Socket/TCP)
+                     |
+             +----------------+
+             | Docker Daemon  | (dockerd)
+             +----------------+
+          /        |        \
+         /         |         \
+   Images     Containers   Networks
+      |            |          |
+      +------------+----------+
+                   |
+             containerd
+                   |
+                runc (OCI Runtime)
+                   |
+            Linux Kernel (Namespaces, Cgroups)
+                   |
+              Running Container
+Docker Architecture Components
+1. Docker Client (docker)
+Command-line interface (CLI).
+Sends commands to the Docker daemon.
+
+Example:
+
+docker run nginx
+2. Docker Daemon (dockerd)
+Core Docker service.
+Builds images.
+Creates and manages containers.
+Manages networks and volumes.
+Pulls images from registries.
+3. Docker Registry
+
+Stores Docker images.
+
+Examples:
+
+Docker Hub
+Private Registry
+
+Example:
+
+docker pull nginx
+4. Docker Images
+Read-only templates.
+Used to create containers.
+Built using a Dockerfile.
+5. Docker Containers
+Running instances of images.
+Isolated using Linux namespaces.
+Resource-limited using cgroups.
+6. containerd
+Manages the complete lifecycle of containers.
+Pulls images.
+Creates snapshots.
+Starts/stops containers.
+7. runc
+Low-level OCI runtime.
+Creates the actual Linux container.
+8. Linux Kernel
+
+Provides container isolation through:
+
+Namespaces (process, network, mount, PID isolation)
+Cgroups (CPU, memory, I/O limits)
+Union Filesystem (layered images)
+What Happens When You Run docker run nginx?
+docker run nginx
+Step 1: User executes the command
+User
+  |
+docker run nginx
+Step 2: Docker Client receives the command
+
+The Docker CLI parses the command and sends it to the Docker Daemon using the Docker API.
+
+User
+  |
+Docker Client
+Step 3: Docker Daemon checks for the image
+
+It checks whether the nginx image already exists locally.
+
+docker images
+If present → Use it.
+If not present → Pull it from the registry.
+Step 4: Pull image (if needed)
+Docker Daemon
+      |
+Docker Hub
+      |
+Download Image
+
+Equivalent command:
+
+docker pull nginx
+Step 5: Create a writable container layer
+
+Docker creates a new writable layer on top of the read-only image layers.
+
+Image Layers (Read-only)
+-------------------------
+Layer 3
+Layer 2
+Layer 1
+-------------------------
+Writable Container Layer
+Step 6: Create networking
+
+Docker:
+
+Assigns an IP address.
+Connects the container to the default bridge network (unless another network is specified).
+Step 7: Attach volumes (if specified)
+
+If the command includes a volume:
+
+docker run -v myvolume:/data nginx
+
+Docker mounts myvolume into /data.
+
+Step 8: Apply resource limits
+
+If options are provided:
+
+docker run --memory=512m --cpus=1 nginx
+
+Docker configures Linux cgroups to enforce those limits.
+
+Step 9: containerd prepares the container
+
+containerd:
+
+Creates the container metadata.
+Prepares the filesystem snapshot.
+Invokes the runtime.
+Step 10: runc creates the container
+
+runc:
+
+Creates namespaces.
+Sets up the filesystem.
+Starts the container process.
+Step 11: Start the main process
+
+Docker executes the image's default CMD or ENTRYPOINT.
+
+For the official Nginx image:
+
+CMD ["nginx", "-g", "daemon off;"]
+
+The Nginx server starts.
+
+Step 12: Container is running
+
+Check:
+
+docker ps
+
+Example:
+
+CONTAINER ID   IMAGE   STATUS
+abcd1234       nginx   Up 10 seconds
+End-to-End Flow
+User
+  |
+docker run nginx
+  |
+Docker Client
+  |
+Docker Daemon (dockerd)
+  |
+Check Local Image
+  |
+Image Found?
+  |         \
+ Yes         No
+ |           |
+ |      Pull from Docker Hub
+ |           |
+ +-----------+
+      |
+Create Writable Layer
+      |
+Create Network
+      |
+Mount Volumes
+      |
+Apply Cgroups
+      |
+containerd
+      |
+runc
+      |
+Linux Kernel
+      |
+Start nginx Process
+      |
+Running Container
+Interview Summary
+
+Docker Architecture:
+
+Docker Client → sends commands.
+Docker Daemon (dockerd) → manages Docker objects.
+Docker Registry → stores images.
+Images → templates.
+Containers → running instances of images.
+containerd → manages container lifecycle.
+runc → creates and starts containers.
+Linux Kernel → provides isolation (namespaces) and resource control (cgroups).
+
+Execution Flow (docker run nginx):
+
+User runs docker run nginx.
+Docker Client sends the request to dockerd.
+dockerd checks for the image locally.
+If missing, it pulls the image from Docker Hub.
+Creates a writable container layer.
+Configures networking and mounts any volumes.
+Applies CPU/memory limits (if specified).
+containerd prepares the container.
+runc creates the container using Linux namespaces and cgroups.
+The image's CMD/ENTRYPOINT starts the application (Nginx), and the container begins running.
