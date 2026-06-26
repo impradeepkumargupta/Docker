@@ -1,0 +1,186 @@
+Docker Commands (Grouped by Category)
+
+1. Docker Information
+docker version          # Show Docker version
+docker info             # Show Docker system information
+docker system df        # Show disk usage
+docker system events    # Show Docker events
+
+2. Docker Images
+docker images                     # List images
+docker image ls                   # List images
+docker pull nginx                 # Download image
+docker search nginx               # Search image
+docker build -t app:v1 .          # Build image
+docker tag app:v1 app:latest      # Tag image
+docker push username/app:v1       # Push image
+docker rmi nginx                  # Remove image
+docker image rm nginx             # Remove image
+docker image inspect nginx        # Inspect image
+docker history nginx              # Show image layers
+docker image prune                # Remove unused images
+
+3. Docker Containers
+docker run nginx                  # Run container
+docker run -d nginx               # Detached mode
+docker run -it ubuntu bash        # Interactive mode
+docker run --name web nginx       # Named container
+docker run -p 8080:80 nginx       # Port mapping
+docker run -v data:/app nginx     # Mount volume
+docker run -e ENV=prod nginx      # Environment variable
+docker create nginx               # Create only
+docker start web                  # Start container
+docker stop web                   # Stop container
+docker restart web                # Restart container
+docker pause web                  # Pause container
+docker unpause web                # Resume container
+docker kill web                   # Kill container
+docker rm web                     # Remove container
+docker rm -f web                  # Force remove
+docker rename old new             # Rename container
+
+4. Container Listing
+docker ps                         # Running containers
+docker ps -a                      # All containers
+docker ps -q                      # Container IDs only
+docker ps -aq                     # All IDs
+
+5. Execute Inside Container
+docker exec -it web bash          # Open bash
+docker exec -it web sh            # Open shell
+docker exec web ls                # Execute command
+docker attach web                 # Attach terminal
+
+6. Container Logs
+docker logs web                   # Show logs
+docker logs -f web                # Follow logs
+docker logs --tail 50 web         # Last 50 lines
+docker logs -t web                # Show timestamps
+
+7. Inspect Containers
+docker inspect web                # Full details
+docker top web                    # Running processes
+docker stats                      # CPU & Memory usage
+docker port web                   # Port mapping
+docker diff web                   # File changes
+docker cp file.txt web:/tmp       # Copy host → container
+docker cp web:/tmp/file.txt .     # Copy container → host
+
+8. Docker Networks
+docker network ls                         # List networks
+docker network create app-network         # Create network
+docker network inspect app-network        # Inspect network
+docker network connect app-network web    # Connect container
+docker network disconnect app-network web # Disconnect container
+docker network rm app-network             # Remove network
+docker network prune                      # Remove unused networks
+
+9. Docker Volumes
+docker volume create data         # Create volume
+docker volume ls                  # List volumes
+docker volume inspect data        # Inspect volume
+docker volume rm data             # Remove volume
+docker volume prune               # Remove unused volumes
+
+10. Docker Compose
+docker compose up                 # Start services
+docker compose up -d              # Detached mode
+docker compose down               # Stop & remove services
+docker compose down -v            # Remove services + volumes
+docker compose ps                 # List services
+docker compose logs               # Show logs
+docker compose logs -f            # Follow logs
+docker compose exec app bash      # Open shell
+docker compose restart            # Restart services
+docker compose stop               # Stop services
+docker compose start              # Start services
+docker compose build              # Build images
+docker compose pull               # Pull images
+docker compose config             # Validate compose file
+
+11. Docker Registry
+docker login                      # Login
+docker logout                     # Logout
+docker push username/app:v1       # Push image
+docker pull nginx                 # Pull image
+
+12. Docker Debugging
+docker ps
+docker ps -a
+docker logs web
+docker inspect web
+docker exec -it web bash
+docker stats
+docker top web
+docker port web
+docker events
+docker system df
+
+13. Docker Cleanup
+docker system prune               # Remove unused resources
+docker image prune                # Remove unused images
+docker container prune            # Remove stopped containers
+docker volume prune               # Remove unused volumes
+docker network prune              # Remove unused networks
+14. Docker Save & Load Images
+docker save -o nginx.tar nginx    # Save image to file
+docker load -i nginx.tar          # Load image
+docker export web > web.tar       # Export container filesystem
+docker import web.tar myimage     # Import as image
+
+15. Docker Build Commands
+docker build .
+docker build -t app:v1 .
+docker build --no-cache .
+docker build -f Dockerfile.dev .
+
+16. Docker Resource Limits
+docker run --memory=512m nginx
+docker run --cpus=2 nginx
+docker run --memory=1g --cpus=2 nginx
+
+17. Docker Environment Variables
+docker run -e DB_HOST=mysql app
+docker run --env-file .env app
+
+18. Docker System Management
+docker system info
+docker system df
+docker system events
+docker system prune
+
+
+Most Frequently Used Commands (Interview & Daily Work)
+
+docker version
+docker info
+
+docker images
+docker pull
+docker build
+docker rmi
+
+docker run
+docker ps
+docker ps -a
+docker stop
+docker start
+docker restart
+docker rm
+
+docker exec
+docker logs
+docker inspect
+docker stats
+
+docker network ls
+docker network create
+
+docker volume ls
+docker volume create
+
+docker compose up -d
+docker compose down
+docker compose logs
+
+docker system prune
