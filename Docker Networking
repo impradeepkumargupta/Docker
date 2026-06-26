@@ -1,1 +1,417 @@
+Docker networking is the mechanism that allows containers to communicate with each other, the host machine, and external networks. Every container is connected to a network, and Docker provides multiple network drivers depending on the use case.
 
+1. Why Docker Networking?
+
+Without networking, containers would be isolated.
+
+Docker networking enables:
+
+Container ↔ Container communication
+Container ↔ Host communication
+Container ↔ Internet communication
+Communication across multiple Docker hosts
+
+Example:
+
++---------------- Host ----------------+
+
+        Docker Engine
+              |
+   -------------------------
+   |          |            |
+Container1 Container2 Container3
+ (Web)      (API)      (Database)
+
+The web container talks to the API container, and the API talks to the database.
+
+2. Docker Network Architecture
+                Internet
+                    |
+             Physical NIC (eth0)
+                    |
+             Docker Host Machine
+                    |
+              docker0 Bridge
+             /      |      \
+          veth    veth    veth
+           |       |       |
+     Container1 Container2 Container3
+
+Components:
+
+Host Network Interface (eth0)
+Docker daemon
+docker0 bridge
+Virtual Ethernet Pair (veth)
+Network Namespace
+
+Each container has:
+
+Own IP
+Own routing table
+Own network interfaces
+Own DNS
+3. Network Drivers
+
+Docker supports several network drivers.
+
+Driver	Purpose	Use Case
+bridge	Default	Containers on same host
+host	Shares host network	High performance
+none	No networking	Complete isolation
+overlay	Multiple Docker hosts	Swarm/Kubernetes
+macvlan	Container gets physical IP	Legacy applications
+ipvlan	Similar to macvlan	Advanced networking
+4. Bridge Network (Default)
+
+Most commonly used.
+
+When Docker is installed:
+
+docker network ls
+
+Output:
+
+NETWORK ID     NAME      DRIVER
+12aa34bc       bridge    bridge
+23ab45cd       host      host
+45bc56de       none      null
+
+Bridge network is automatically created.
+
+Architecture
+
+docker0 Bridge
+
+          |
+----------------------------
+|            |            |
+Container1 Container2 Container3
+172.17.0.2 172.17.0.3 172.17.0.4
+
+Each container gets an IP.
+
+Example
+
+Run container
+
+docker run -dit --name web nginx
+
+Check IP
+
+docker inspect web
+
+or
+
+docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' web
+
+Output
+
+172.17.0.2
+5. User-defined Bridge Network
+
+Recommended over the default bridge.
+
+Create
+
+docker network create mynetwork
+
+Check
+
+docker network ls
+
+Run containers
+
+docker run -dit --name app1 --network mynetwork nginx
+
+docker run -dit --name app2 --network mynetwork nginx
+
+Now they can communicate using names.
+
+app1
+ |
+ |-------> app2
+
+Test
+
+docker exec -it app1 ping app2
+
+No IP required.
+
+Docker DNS resolves names automatically.
+
+6. Host Network
+
+Container shares the host's network stack.
+
+Host
+
+eth0
+ |
+Application
+ |
+Container
+
+No separate IP.
+
+Run
+
+docker run --network host nginx
+
+Result
+
+Host IP = Container IP
+
+Advantages
+
+No NAT
+Faster
+Better performance
+
+Disadvantages
+
+No isolation
+Port conflicts
+7. None Network
+
+Container has no network.
+
+Container
+
+lo (loopback)
+
+No internet
+No bridge
+No IP
+
+Run
+
+docker run --network none ubuntu
+
+Verify
+
+docker exec container ip addr
+
+Only loopback exists.
+
+8. Overlay Network
+
+Used when containers are running on multiple hosts.
+
+Example
+
+Host A                    Host B
+
+Web Container -------- API Container
+          Overlay Network
+
+Used in:
+
+Docker Swarm
+Kubernetes (conceptually via CNI plugins)
+
+Create
+
+docker network create \
+-d overlay \
+mynet
+9. Macvlan Network
+
+Container gets an IP from the physical LAN.
+
+Instead of
+
+Host IP
+192.168.1.10
+
+Container gets
+
+192.168.1.20
+
+Container appears like another physical machine.
+
+Useful for:
+
+Legacy software
+Network appliances
+Monitoring tools
+10. Network Namespace
+
+Each container has its own namespace.
+
+Container 1
+
+eth0
+lo
+
+Container 2
+
+eth0
+lo
+
+They cannot see each other's interfaces.
+
+Check
+
+docker exec container ip addr
+11. Port Mapping
+
+Container
+
+Nginx
+
+Port 80
+
+Host
+
+Port 8080
+
+Run
+
+docker run -p 8080:80 nginx
+
+Meaning
+
+Host:8080
+      |
+      |
+Container:80
+
+Open
+
+http://localhost:8080
+12. Multiple Port Mapping
+docker run \
+-p 8080:80 \
+-p 8443:443 nginx
+13. Expose vs Publish
+EXPOSE
+
+Inside Dockerfile
+
+EXPOSE 80
+
+Documentation only.
+
+Does NOT publish the port.
+
+Publish
+docker run -p 8080:80 nginx
+
+Actually accessible from outside.
+
+14. Container Communication
+
+Without custom network
+
+Container A
+
+ping B
+
+❌ May fail by name
+
+User-defined bridge
+
+Container A
+
+ping app2
+
+✔ Success
+15. DNS Resolution
+
+Docker has an internal DNS server.
+
+Instead of
+
+172.18.0.5
+
+Use
+
+database
+
+Application
+
+Web
+
+ |
+ |-----> database
+
+No hardcoded IPs.
+
+16. Inspect Network
+
+List networks
+
+docker network ls
+
+Inspect
+
+docker network inspect mynetwork
+
+Output includes:
+
+Driver
+Subnet
+Gateway
+Connected containers
+IP addresses
+17. Connect Running Container
+docker network connect mynetwork app1
+
+Disconnect
+
+docker network disconnect mynetwork app1
+18. Remove Network
+docker network rm mynetwork
+
+Remove unused
+
+docker network prune
+19. Useful Commands
+Command	Purpose
+docker network ls	List networks
+docker network inspect <network>	Show network details
+docker network create <name>	Create a network
+docker network rm <name>	Remove a network
+docker network prune	Remove unused networks
+docker network connect <network> <container>	Attach a container
+docker network disconnect <network> <container>	Detach a container
+docker inspect <container>	Show container networking details
+docker exec -it <container> ip addr	Show interfaces inside a container
+docker exec -it <container> ip route	Show routing table
+docker exec -it <container> ping <container>	Test connectivity
+docker exec -it <container> ss -tuln	Show listening ports
+docker port <container>	Show published ports
+20. End-to-End Example
+
+Step 1: Create a network
+
+docker network create app-net
+
+Step 2: Start a database container
+
+docker run -d \
+  --name mysql \
+  --network app-net \
+  -e MYSQL_ROOT_PASSWORD=password \
+  mysql:8
+
+Step 3: Start an application container
+
+docker run -d \
+  --name webapp \
+  --network app-net \
+  -p 8080:8080 \
+  myapp:latest
+
+Step 4: Verify the network
+
+docker network inspect app-net
+
+You should see both mysql and webapp attached to the network.
+
+Step 5: Test connectivity from the application container
+
+docker exec -it webapp ping mysql
+
+The application can connect to the database using the hostname mysql instead of an IP address.
