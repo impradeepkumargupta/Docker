@@ -1,0 +1,75 @@
+What is a Docker Volume?
+
+A Docker Volume is a persistent storage mechanism that stores data outside the container's writable layer.
+
+Data remains even if the container is deleted.
+Used for databases, logs, uploads, and configuration files.
+Why Use Docker Volumes?
+
+Without a volume:
+
+Container → Data → Delete Container → Data Lost ❌
+
+With a volume:
+
+Container → Volume → Delete Container → Data Safe ✅
+Types of Storage
+Type	Description
+Named Volume	Docker manages the storage (recommended).
+Anonymous Volume	Docker creates a random volume name.
+Bind Mount	Uses a host directory.
+Example
+
+Create a volume:
+
+docker volume create myvolume
+
+Run a container using the volume:
+
+docker run -d --name nginx \
+-v myvolume:/usr/share/nginx/html \
+nginx
+
+Here:
+
+myvolume → Docker volume
+/usr/share/nginx/html → Path inside the container
+Data Persistence Example
+
+Create a file:
+
+docker exec -it nginx sh
+echo "Hello Docker" > /usr/share/nginx/html/test.txt
+
+Delete the container:
+
+docker rm -f nginx
+
+Create a new container with the same volume:
+
+docker run -d --name nginx2 \
+-v myvolume:/usr/share/nginx/html \
+nginx
+
+The test.txt file is still available because it is stored in the volume.
+
+Common Commands
+# Create a volume
+docker volume create myvolume
+
+# List volumes
+docker volume ls
+
+# Inspect a volume
+docker volume inspect myvolume
+
+# Remove a volume
+docker volume rm myvolume
+
+# Remove unused volumes
+docker volume prune
+Volume vs Bind Mount
+Volume	Bind Mount
+Managed by Docker	Managed by the user
+Stored in /var/lib/docker/volumes/	Stored in any host directory
+Best for production	Best for development
