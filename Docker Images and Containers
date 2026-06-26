@@ -1,0 +1,344 @@
+Docker Images and Containers (Detailed Explanation)
+
+Understanding the difference between Docker Images and Docker Containers is one of the most important Docker concepts.
+
+What is a Docker Image?
+
+A Docker Image is a read-only template that contains everything needed to run an application.
+
+It includes:
+
+Application code
+Runtime (Java, Python, Node.js, etc.)
+Libraries
+Dependencies
+Environment variables
+Configuration files
+Default startup command (CMD or ENTRYPOINT)
+
+Think of an image as a blueprint or template.
+
+Example
+Nginx Image
+
++-------------------------+
+| Ubuntu OS               |
+| Nginx Installed          |
+| Configuration Files      |
+| Libraries               |
+| CMD: nginx              |
++-------------------------+
+
+An image cannot be modified while it is running. To change it, you typically rebuild a new image.
+
+What is a Docker Container?
+
+A Docker Container is a running instance of a Docker image.
+
+When Docker starts an image:
+
+It creates a writable layer on top of the image.
+It starts the application defined by CMD or ENTRYPOINT.
+
+Think of a container as a running process created from an image.
+
+Example:
+
+Image
+   |
+   +----> Container 1
+   |
+   +----> Container 2
+   |
+   +----> Container 3
+
+One image can create multiple containers.
+
+Real-World Analogy
+Blueprint (Image)
+       |
+       | Build
+       ↓
+House (Container)
+
+Or:
+
+Class (Image)
+      |
+      ↓
+Object (Container)
+Image vs Container
+Docker Image	Docker Container
+Read-only template	Running instance
+Cannot execute by itself	Executes applications
+Created from Dockerfile	Created from an image
+Can create many containers	Runs one application/process
+Stored locally or in registries	Runs on the Docker host
+Docker Image Lifecycle
+Dockerfile
+      |
+docker build
+      |
+Docker Image
+      |
+docker run
+      |
+Docker Container
+Working with Docker Images
+1. List Images
+docker images
+
+Example output:
+
+REPOSITORY   TAG      IMAGE ID       SIZE
+nginx        latest   abc123def456   187MB
+ubuntu       22.04    def456ghi789    77MB
+mysql        8.0      xyz789abc123   550MB
+Columns
+REPOSITORY → Image name
+TAG → Version
+IMAGE ID → Unique ID
+SIZE → Image size
+2. Download an Image
+docker pull nginx
+
+Docker downloads the image from Docker Hub.
+
+Output:
+
+Using default tag: latest
+
+Downloading...
+Pull complete
+
+Verify:
+
+docker images
+3. Download a Specific Version
+docker pull nginx:1.27
+
+Avoid relying on latest in production.
+
+4. Search for Images
+docker search nginx
+
+Example:
+
+NAME
+nginx
+bitnami/nginx
+linuxserver/nginx
+5. Remove an Image
+docker rmi nginx
+
+Remove by ID:
+
+docker rmi abc123def456
+
+If an image is in use by a container, stop and remove the container first.
+
+6. Image History
+docker history nginx
+
+Shows the layers used to build the image.
+
+7. Inspect an Image
+docker inspect nginx
+
+Displays details such as:
+
+Image ID
+Architecture
+Environment variables
+Exposed ports
+Layers
+Working with Docker Containers
+1. Create and Run a Container
+docker run nginx
+
+Docker:
+
+Checks if the image exists locally.
+Pulls it if necessary.
+Creates a container.
+Starts the application.
+2. Run in Detached Mode
+docker run -d nginx
+
+-d = Run in the background.
+
+Example output:
+
+c9f4a1b2e3d4...
+3. Give the Container a Name
+docker run -d --name web nginx
+
+Instead of a random name, the container is named web.
+
+4. Publish a Port
+docker run -d -p 8080:80 nginx
+
+Meaning:
+
+Host Port 8080
+        |
+        |
+Container Port 80
+
+Access the application:
+
+http://localhost:8080
+5. List Running Containers
+docker ps
+
+Example:
+
+CONTAINER ID   IMAGE   STATUS
+ab1234         nginx   Up 5 minutes
+6. List All Containers
+docker ps -a
+
+Includes stopped containers.
+
+7. Stop a Container
+docker stop web
+8. Start a Stopped Container
+docker start web
+9. Restart a Container
+docker restart web
+10. Pause a Container
+docker pause web
+11. Unpause a Container
+docker unpause web
+12. Remove a Container
+docker rm web
+
+If it's running:
+
+docker rm -f web
+13. Execute Commands Inside a Container
+
+Open a shell:
+
+docker exec -it web bash
+
+If bash isn't available:
+
+docker exec -it web sh
+
+Examples:
+
+ls
+
+pwd
+
+cat /etc/os-release
+
+Exit:
+
+exit
+14. View Container Logs
+docker logs web
+
+Follow logs:
+
+docker logs -f web
+15. Inspect a Container
+docker inspect web
+
+Shows:
+
+IP address
+Mounted volumes
+Network configuration
+Environment variables
+State
+Image used
+16. View Running Processes
+docker top web
+17. View Resource Usage
+docker stats
+
+Displays:
+
+CPU usage
+Memory usage
+Network I/O
+Disk I/O
+Image Layers
+
+Docker images are built in layers.
+
+Example Dockerfile:
+
+FROM ubuntu
+RUN apt update
+RUN apt install -y nginx
+COPY index.html /var/www/html/
+
+Layers:
+
+Layer 4 -> COPY index.html
+Layer 3 -> Install nginx
+Layer 2 -> apt update
+Layer 1 -> Ubuntu Base Image
+
+Benefits:
+
+Faster builds (cached layers).
+Reduced storage (shared layers).
+Efficient downloads (only changed layers).
+Container Filesystem
+           Writable Layer
+        (Container Changes)
+-------------------------------
+Read-only Image Layer 4
+Read-only Image Layer 3
+Read-only Image Layer 2
+Read-only Image Layer 1
+
+Files created or modified while the container is running are stored in the writable layer. If the container is removed, those changes are lost unless you use a Docker volume.
+
+Complete Example
+Step 1: Pull an image
+docker pull nginx
+Step 2: Verify
+docker images
+Step 3: Run a container
+docker run -d --name web -p 8080:80 nginx
+Step 4: Check running containers
+docker ps
+Step 5: View logs
+docker logs web
+Step 6: Open a shell
+docker exec -it web bash
+Step 7: Stop the container
+docker stop web
+Step 8: Start it again
+docker start web
+Step 9: Remove it
+docker rm -f web
+
+The container is deleted, but the nginx image remains on your system.
+
+Frequently Asked Interview Questions
+What is the difference between an image and a container?
+An image is a read-only template; a container is a running instance of that template.
+Can one image create multiple containers?
+Yes. A single image can be used to start many independent containers.
+What happens if you delete a container?
+The container and its writable layer are removed. The image remains unless you explicitly delete it.
+What is stored in a Docker image?
+Application code, runtime, libraries, dependencies, configuration, and the default startup command.
+Why are Docker images layered?
+To improve build speed, enable caching, reduce storage usage, and share common layers between images.
+Quick Revision
+Image = Blueprint/Template (Read-only)
+Container = Running Instance (Writable Layer)
+docker pull → Downloads an image.
+docker run → Creates and starts a container.
+docker ps → Lists running containers.
+docker exec → Runs commands inside a container.
+docker logs → Displays application logs.
+docker rm → Removes a container.
+docker rmi → Removes an image.
