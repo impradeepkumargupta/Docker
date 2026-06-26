@@ -1,0 +1,471 @@
+Docker Debugging & Log Analysis
+
+Docker debugging is the process of identifying and fixing issues in Docker containers, images, networks, or applications. Most issues can be diagnosed using Docker's built-in commands.
+
+Docker Debugging Workflow
+Container Problem
+       │
+       ▼
+Check Container Status
+       │
+       ▼
+Check Logs
+       │
+       ▼
+Inspect Container
+       │
+       ▼
+Login into Container
+       │
+       ▼
+Check Network
+       │
+       ▼
+Check Volumes
+       │
+       ▼
+Check CPU/Memory
+       │
+       ▼
+Fix the Problem
+1. Check Container Status
+
+First check whether the container is running.
+
+docker ps
+
+Output
+
+CONTAINER ID   IMAGE    STATUS
+123abc         nginx    Up 5 minutes
+
+If you don't see your container:
+
+docker ps -a
+
+Output
+
+CONTAINER ID   IMAGE    STATUS
+123abc         nginx    Exited (1)
+What to check?
+Running
+Exited
+Restarting
+Created
+Paused
+
+If the container is Exited, check the logs.
+
+2. Analyze Container Logs
+
+Logs are the first place to look when an application fails.
+
+Show logs
+
+docker logs nginx
+
+Example
+
+Starting Nginx...
+
+Error: Port already in use
+
+Follow logs continuously
+
+docker logs -f nginx
+
+Show last 20 lines
+
+docker logs --tail 20 nginx
+
+Show timestamps
+
+docker logs -t nginx
+Common log messages
+
+Port conflict
+
+Bind for 0.0.0.0:80 failed
+
+Another process is already using port 80.
+
+Database connection
+
+Connection refused
+
+Database container may not be running or reachable.
+
+File not found
+
+No such file or directory
+
+Incorrect path or missing file.
+
+3. Inspect Container
+docker inspect nginx
+
+Shows
+
+IP Address
+Mounts
+Volumes
+Environment Variables
+Restart Policy
+Network
+Ports
+
+Example
+
+IPAddress:
+172.17.0.2
+
+RestartPolicy:
+always
+
+Get only the IP
+
+docker inspect -f '{{.NetworkSettings.IPAddress}}' nginx
+4. Login into Container
+
+Open shell
+
+docker exec -it nginx bash
+
+If bash isn't installed
+
+docker exec -it nginx sh
+
+Inside container
+
+pwd
+
+ls
+
+cat /etc/os-release
+
+ps -ef
+
+Useful for checking:
+
+Files
+Configuration
+Installed packages
+Running processes
+5. Check Running Processes
+docker top nginx
+
+Output
+
+PID USER COMMAND
+
+12 root nginx
+
+18 root nginx worker
+
+Shows processes running inside the container.
+
+6. Monitor CPU and Memory
+docker stats
+
+Output
+
+NAME      CPU %   MEM
+
+nginx      2.3%   25MB
+
+mysql      85%    900MB
+
+Use this when:
+
+Container is slow
+High memory usage
+CPU spikes
+7. Check Port Mapping
+docker port nginx
+
+Output
+
+80/tcp -> 0.0.0.0:8080
+
+Means
+
+Host:8080
+      │
+Container:80
+
+If users cannot access the application, verify the expected port mapping exists.
+
+8. Check Network
+
+List networks
+
+docker network ls
+
+Inspect
+
+docker network inspect bridge
+
+Check communication
+
+docker exec app ping mysql
+
+If ping fails
+
+Containers may be on different networks.
+Wrong container/service name.
+Network configuration issue.
+9. Check Mounted Volumes
+docker inspect mysql
+
+Look for
+
+Mounts
+
+Example
+
+Source
+
+/var/lib/docker/volumes/mysql-data
+
+Destination
+
+/var/lib/mysql
+
+If no volume is mounted, database data will be lost when the container is removed.
+
+10. Check Docker Events
+docker events
+
+Output
+
+Container start
+
+Container stop
+
+Container die
+
+Useful for troubleshooting unexpected restarts or crashes.
+
+11. Check Disk Usage
+docker system df
+
+Output
+
+Images
+
+Containers
+
+Volumes
+
+Build Cache
+
+Shows how much storage Docker is using.
+
+12. Copy Files for Analysis
+
+Copy from container
+
+docker cp nginx:/etc/nginx/nginx.conf .
+
+Copy into container
+
+docker cp nginx.conf nginx:/etc/nginx/
+
+Useful when reviewing or replacing configuration files.
+
+13. Check File Changes
+docker diff nginx
+
+Output
+
+A /tmp/test.txt
+
+C /etc/nginx/nginx.conf
+
+Meaning:
+
+A = Added
+C = Changed
+D = Deleted
+Common Debugging Scenarios
+Scenario 1: Container Exits Immediately
+
+Check status
+
+docker ps -a
+
+Output
+
+Exited (1)
+
+Check logs
+
+docker logs app
+
+Output
+
+Database connection failed
+
+Cause: Application cannot connect to the database.
+
+Solution: Verify the database container is running, networking is correct, and connection settings are valid.
+
+Scenario 2: Website Not Opening
+
+Check
+
+docker ps
+
+Check ports
+
+docker port nginx
+
+Output
+
+80 -> 8080
+
+Verify:
+
+Container is running.
+Correct port is mapped.
+Application inside the container is listening on the expected port.
+Scenario 3: Container Restarting Continuously
+docker ps
+
+Output
+
+Restarting (1)
+
+Check logs
+
+docker logs nginx
+
+Example
+
+Configuration syntax error
+
+Fix the configuration and restart the container.
+
+Scenario 4: Two Containers Cannot Communicate
+
+Test connectivity
+
+docker exec frontend ping backend
+
+If it fails
+
+docker network inspect app-network
+
+Verify both containers are attached to the same network.
+
+Scenario 5: High CPU Usage
+docker stats
+
+Output
+
+CPU
+
+98%
+
+Investigate the running processes:
+
+docker top app
+
+Then inspect the application logs to identify excessive work or loops.
+
+Scenario 6: Database Data Lost
+
+Check
+
+docker inspect mysql
+
+Look for
+
+Mounts
+
+If no Docker volume is configured, the database files were stored only in the container's writable layer and were removed with the container.
+
+Important Debugging Commands
+Command	Purpose
+docker ps	Running containers
+docker ps -a	All containers
+docker logs <container>	View logs
+docker logs -f <container>	Live logs
+docker logs --tail 50 <container>	Last 50 log lines
+docker inspect <container>	Container details
+docker exec -it <container> bash	Open shell
+docker top <container>	Running processes
+docker stats	CPU & memory usage
+docker port <container>	Port mappings
+docker network ls	List networks
+docker network inspect <network>	Network details
+docker volume ls	List volumes
+docker diff <container>	File changes
+docker cp	Copy files to/from container
+docker events	Docker events
+docker system df	Disk usage
+docker system prune	Remove unused resources
+Real-Time Example
+
+Suppose your application is not working.
+
+Step 1: Check if it's running
+docker ps -a
+
+Output:
+
+STATUS: Exited (1)
+Step 2: Read the logs
+docker logs myapp
+
+Output:
+
+Error: Cannot connect to MySQL
+Step 3: Verify the database
+docker ps
+
+If MySQL isn't running:
+
+docker start mysql
+Step 4: Test connectivity
+docker exec myapp ping mysql
+
+If successful:
+
+64 bytes from mysql
+Step 5: Restart the application
+docker restart myapp
+Step 6: Confirm it's healthy
+docker ps
+docker logs myapp
+
+If the logs show normal startup and the container remains in the Up state, the issue has been resolved.
+
+Interview Questions
+1. How do you troubleshoot a container that exits immediately?
+docker ps -a
+docker logs <container>
+docker inspect <container>
+docker exec (if it stays running long enough)
+Verify image, environment variables, volumes, and networking.
+2. How do you monitor container resource usage?
+docker stats
+3. How do you access a running container?
+docker exec -it <container> bash
+4. How do you view application logs?
+docker logs -f <container>
+5. How do you verify network connectivity?
+docker network inspect <network>
+docker exec <container> ping <service>
+Docker Debugging Checklist
+1. docker ps -a
+2. docker logs <container>
+3. docker inspect <container>
+4. docker exec -it <container> bash
+5. docker top <container>
+6. docker stats
+7. docker port <container>
+8. docker network inspect <network>
+9. docker volume ls
+10. docker events
+11. docker system df
