@@ -1,147 +1,158 @@
-# Docker
-Learning Docker
+Docker
 
-
-What is Docker?
-
-Docker is an open-source containerization platform that allows developers to build, package, ship, and run applications along with all their dependencies in lightweight, portable containers.
-
-In simple terms:
-
-Docker packages an application and everything it needs (code, libraries, runtime, configurations) into a container so it runs the same way on any machine.
+Docker is an open-source containerization platform that packages an application along with its libraries, dependencies, runtime, and configuration into a container, ensuring the application runs consistently across development, testing, and production environments.
 
 Why Docker?
-
-Before Docker:
-
-Developer Machine
-    ↓
-Works on my laptop
-
-Testing Server
-    ↓
-Fails ❌
-
-Production Server
-    ↓
-Different environment ❌
-
-Problems:
-
-Different operating systems
-Different library versions
-Missing dependencies
-Environment mismatch
-
-With Docker:
-
-Docker Image
-      ↓
-Developer
-      ↓
-Testing
-      ↓
-Production
-
-The application runs consistently everywhere.
-
-What is a Container?
-
-A container is a lightweight, isolated environment that contains:
-
-Application code
-Runtime (e.g., Java, Python, Node.js)
-Libraries
-Dependencies
-Configuration files
-
-Containers share the host operating system kernel, making them much smaller and faster than virtual machines.
+Eliminates "Works on my machine" issues.
+Lightweight compared to Virtual Machines (shares host OS kernel).
+Faster deployment and scaling.
+Better resource utilization and isolation.
+Simplifies CI/CD and microservices deployment.
 
 Docker Architecture
-                Docker Hub
-                     ▲
-               Pull / Push Images
-                     │
-              Docker Engine
-         ┌───────────┴───────────┐
-         │                       │
-   Docker Client            Docker Daemon
-   (docker CLI)         (Builds & runs containers)
-                             │
-                       Images & Containers
+
+Developer
+    │
+docker CLI (docker run/build/pull)
+    │
+Docker Daemon (dockerd)
+    │
+ ├── Images
+ ├── Containers
+ ├── Networks
+ └── Volumes
+    │
+Docker Registry (Docker Hub/Private Registry)
+
 Components
-Docker Client: You run commands like docker run and docker build.
-Docker Daemon: Executes those commands and manages images, containers, networks, and volumes.
-Docker Hub: A public repository for Docker images.
-Docker Workflow
-Dockerfile
-      │
-      ▼
-docker build
-      │
-      ▼
-Docker Image
-      │
-docker run
-      ▼
-Docker Container
-Docker Image vs Container
-Docker Image	Docker Container
-Blueprint/template	Running instance of an image
-Read-only	Read-write
-Cannot execute	Executes the application
 
-Example:
+Component	Description
+Docker Client	Executes Docker commands (docker run, docker build).
+Docker Daemon	Background service that creates images, containers, networks, and volumes.
+Docker Images	Read-only templates used to create containers.
+Docker Containers	Running instances of images with a writable layer.
+Docker Registry	Stores and distributes Docker images (Docker Hub or private registry).
 
-Image = Recipe
-Container = Cake made from the recipe
-Docker vs Virtual Machine
-Docker	Virtual Machine
-Shares host OS kernel	Has its own guest OS
-Lightweight	Heavy
-Starts in seconds	Takes minutes
-Uses less memory	Uses more memory
-High performance	More resource usage
-Basic Docker Commands
-# Download an image
+What Happens When docker run nginx is Executed?
+Docker CLI sends request to Docker Daemon.
+Daemon checks if the image exists locally.
+If not, it pulls the image from Docker Hub.
+Image layers are downloaded.
+Docker creates a writable container layer.
+Namespaces provide process/network/file isolation.
+cgroups apply CPU and memory limits.
+Network interface is created.
+Container starts and the application begins running.
+
+
+Docker Commands (Group-wise)
+
+1. Information Commands
+Command	Purpose
+docker version	Docker client & server version
+docker info	System information
+docker login	Login to registry
+docker logout	Logout from registry
+docker system df	Show Docker disk usage
+
+2. Image Commands
+Command	Purpose
+docker search nginx	Search image
+docker pull nginx	Download image
+docker images / docker image ls	List images
+docker inspect nginx	Image details
+docker history nginx	Show image layers
+docker tag nginx myapp:v1	Create tag
+docker push repo/image:v1	Upload image
+docker save nginx > nginx.tar	Export image
+docker load < nginx.tar	Import image
+docker rmi nginx	Remove image
+
+3. Container Commands
+Command	Purpose
+docker create nginx	Create container only
+docker run nginx	Create & start
+docker run -d nginx	Run in background
+docker run --name web nginx	Assign name
+docker run -p 8080:80 nginx	Port mapping
+docker run -v data:/app nginx	Mount volume
+docker run -e ENV=prod nginx	Environment variable
+docker run -it ubuntu bash	Interactive terminal
+docker ps / docker ps -a	List containers
+docker stop/start/restart <id>	Manage lifecycle
+docker pause/unpause <id>	Pause/Resume
+docker kill <id>	Force stop
+docker rm -f <id>	Delete container
+docker rename old new	Rename container
+docker inspect <id>	Detailed information
+
+4. Debugging & Monitoring
+Command	Purpose
+docker logs <id>	Container logs
+docker logs -f <id>	Live logs
+docker logs --tail 100 <id>	Last 100 logs
+docker exec -it <id> bash	Access container shell
+docker top <id>	Running processes
+docker stats	CPU & Memory usage
+docker events	Docker events
+docker inspect <id>	Full container configuration
+
+5. File Operations
+Command	Purpose
+docker cp file.txt container:/tmp	Host → Container
+docker cp container:/tmp/file.txt .	Container → Host
+
+6. Volume Commands
+Command	Purpose
+docker volume create myvol	Create volume
+docker volume ls	List volumes
+docker volume inspect myvol	Volume details
+docker volume rm myvol	Delete volume
+docker volume prune	Remove unused volumes
+
+7. Network Commands
+Command	Purpose
+docker network ls	List networks
+docker network create mynet	Create network
+docker network inspect mynet	Network details
+docker network connect mynet container	Connect container
+docker network disconnect mynet container	Disconnect container
+docker network rm mynet	Delete network
+
+8. Build Commands
+Command	Purpose
+docker build -t app:v1 .	Build image
+docker build --no-cache .	Ignore cache
+docker build -f Dockerfile.dev .	Custom Dockerfile
+
+9. Docker Compose
+Command	Purpose
+docker compose up -d	Start services
+docker compose down	Stop & remove services
+docker compose restart	Restart services
+docker compose logs	View logs
+docker compose ps	List running services
+docker compose up --scale web=3 -d	Scale containers
+
+10. Cleanup Commands
+Command	Purpose
+docker container prune	Remove stopped containers
+docker image prune	Remove unused images
+docker volume prune	Remove unused volumes
+docker network prune	Remove unused networks
+docker system prune	Remove all unused resources
+docker system prune -a	Remove everything unused
+Practical Example
 docker pull nginx
-
-# List images
 docker images
-
-# Run a container
-docker run -d -p 8080:80 --name web nginx
-
-# List running containers
+docker run -d --name nginx-server -p 8080:80 nginx
 docker ps
+docker logs nginx-server
+docker exec -it nginx-server bash
+docker stop nginx-server
+docker start nginx-server
+docker rm -f nginx-server
 
-# Stop a container
-docker stop web
+Access:
 
-# Start a container
-docker start web
-
-# View logs
-docker logs web
-
-# Execute a command inside a container
-docker exec -it web bash
-
-# Remove a container
-docker rm -f web
-Advantages of Docker
-Fast application deployment
-Consistent environments across development, testing, and production
-Lightweight compared to VMs
-Easy scalability
-Efficient resource utilization
-Simplifies CI/CD pipelines
-Supports microservices architecture
-Common Use Cases
-Web application deployment
-Microservices
-CI/CD pipelines
-Testing and development environments
-Running databases (MySQL, PostgreSQL, MongoDB)
-Cloud-native applications
-Kubernetes workloads
+http://<Server-IP>:8080
